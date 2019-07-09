@@ -2,7 +2,8 @@
 *(With postgres)*
 
 ### What this is for
-* This is designed for people who have access to Looker logs and want to browse them in Looker itself
+* This is designed for people who have access to Looker logs and want to analyse and browsed them in Looker itself
+* This is done by reading a log file in python and uploading it to a local postgres database, which is then connected to a Looker instance
 * This is useful for Looker support staff as well as Looker customers who have access to their own log files
 
 
@@ -81,12 +82,14 @@
 ### Using the Looker explores
 _More will be added to this_
 
-* The log label always_filter lets you isolate a specific label we used when importing data
-* Index is the primary key on the data - this iterates up for each line in the logs, so can be used as a proxy for the log line number. This is useful when you want to see the next 50 or previous 50 lines, for example
+* The `log label` always_filter lets you isolate a specific label we used when importing data
+* `Index` is the primary key on the data - this iterates up for each line in the logs, so can be used as a proxy for the log line number. This is useful when you want to see the next 50 or previous 50 lines, for example
   * This contains a drill to see next 50 lines, previous 50 lines and 25 lines either side
-* Thread is the database thread / process 
+  * The drill highlights the line you came from
+* `Thread` is the database thread / process 
   * There is a drill here to isolate the lines in a specific thread
-* The Query summary section contains information about individual query runtimes. 
+  * The drill highlights the line you came from
+* The `Query summary` section contains information about individual query runtimes. 
 
 ### Requirements
 * Python 3.6+
