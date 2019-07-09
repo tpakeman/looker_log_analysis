@@ -9,7 +9,9 @@
 ### **Important** security considerations
 
 * Log files do not contain customer data, but they can contain sensitive metadata. If you intend to use this on behalf of a Looker customer or any Looker instance you do not own, **make sure you have permission from the owner first**
-* It is also a security risk to keep any log data locally for longer than is absolutely necessary. Use the `teardown` function included once you have finished the analysis to remove all log data from your local postgres database
+* It is also a security risk to keep any log data locally for longer than is absolutely necessary.
+  * Delete log files once you have finished using them
+  * Use the `teardown` function here to remove log data from your local postgres database
 
 
 ### What's in the repo
@@ -39,7 +41,17 @@
 * `Ctrl + D` to quit the sql client
 
 
-### Running the python script
+### Set up your Looker instance to run the analysis
+
+* Create a new connection in Looker to your local postgres
+  * Postgres runs on `localhost:5432` by default
+  * The default postgres schema is `public`
+  * Use the username and password you chose during setup
+* Create a new project for the log analysis
+  * Copy the files included in the `LookML files` folder here
+
+
+### Running the python script to import files
 
 * Update the `config.json` file in this directory, to include:
   * `table_name`: the name of the table you would like to use in postgres
@@ -64,7 +76,17 @@
 
 
 ### Running from the command line
+  * TO DO
 
+### Using the Looker explores
+_More will be added to this_
+
+* The log label always_filter lets you isolate a specific label we used when importing data
+* Index is the primary key on the data - this iterates up for each line in the logs, so can be used as a proxy for the log line number. This is useful when you want to see the next 50 or previous 50 lines, for example
+  * This contains a drill to see next 50 lines, previous 50 lines and 25 lines either side
+* Thread is the database thread / process 
+  * There is a drill here to isolate the lines in a specific thread
+* The Query summary section contains information about individual query runtimes. 
 
 ### Requirements
 * Python 3.6+
