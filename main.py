@@ -19,11 +19,11 @@ if __name__ == '__main__':
         if args.clear is None:
             ans = input("This will delete the whole table, proceed?\n[y/n]\n")
             if ans.lower() == 'y':
-                modules.teardown()
+                modules.teardown(debug=not args.silent)
         else:
             ans = input("This will delete the label '{}' from table, proceed?\n[y/n]\n".format(args.clear))
             if ans.lower() == 'y':
-                modules.teardown(label=args.clear)
+                modules.teardown(label=args.clear, debug=not args.silent)
     else:
         if args.clear is not None:
             parser.error("--clear must be used with the --reset argument")
