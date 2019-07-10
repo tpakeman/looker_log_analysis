@@ -1,6 +1,13 @@
 # Analysing Looker logs... *in Looker!*
 *(With postgres)*
 
+---
+
+![Demo](demo.gif)
+
+
+---
+
 ### What does this do?
 * This is a set of python scripts to upload a looker log file to a postgres database
   * _Postgres was chosen as it is very easy to run locally on a macbook_

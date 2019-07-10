@@ -221,5 +221,5 @@ def print_labels(config=CONFIG):
                 print("The table is empty.")
             else:
                 print("Existing labels in the table:\n{}\nUse --reset --clear and a label to delete it, or --reset on its own to delete all.".format(r))
-        except psycopg2.errors.UndefinedTable as e:
+        except psycopg2.errors.UndefinedTable:
             print("The table doesn't exist.")
