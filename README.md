@@ -43,6 +43,7 @@
   * `psql mydatabasename`
 * Create a new user called `looker`
   * `CREATE USER looker;`
+* [Follow the Looker setup steps here](https://docs.looker.com/setup-and-management/database-config/postgresql)
 * `Ctrl + D` to quit the sql client
 
 
@@ -60,7 +61,8 @@
 
 * Update the `config.json` file in this directory, to include:
   * `table_name`: the name of the table you would like to use in postgres
-    * _Default_ `looker_logs`
+    * It's a good idea to include the schema name here too
+    * _Default_ `public.looker_logs`
   * `host`: the address of the postgres database
     * _Default:_ `localhost`
   * `dbname`: the name of the database you created at setup

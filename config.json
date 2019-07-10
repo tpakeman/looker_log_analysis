@@ -1,4 +1,4 @@
-{"table_name": "looker_logs",
+{"table_name": "public.looker_logs",
 "host": "localhost",
 "dbname": "looker_logs",
 "user": "looker"}
