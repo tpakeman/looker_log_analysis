@@ -96,6 +96,24 @@
       * `--new` or `-n` to delete the table and upload from scratch. Omit this to insert into the existing table
       * `--silent` or `-s` to supress progress information. Omit this to print the upload progress.
 
+##### Some command line examples
+
+* Upload two logfiles in the downloads folder with the label 'upload_10_07_2018' - use an existing table and print the results
+  * `python main.py --files ~/Downloads/looker.log ~/Downloads/looker(1).log --label 'upload_10_07_2018'`
+  * or, more concisely:
+  * `python main.py -f ~/Downloads/looker.log ~/Downloads/looker(1).log -l 'upload_10_07_2018'`
+* Upload a logfile but delete the existing table and start again by using `--new` or `-n`
+  * `python main.py -f ~/Downloads/looker.log -l 'upload_10_07_2018' --new`
+* As above, but don't print the progress by using `--silent` or `-s`:
+  * `python main.py -f ~/Downloads/looker.log -l 'upload_10_07_2018' -n --silent`
+* Delete the whole table
+  * `python main.py --reset` or `python main.py -r`
+* Delete rows with the label 'local_data' from the table:
+  * `python main.py -r --clear 'local_data'` or `python main.py -r -c local_data`
+* Show the labels currently in the table:
+  * `python main.py --print` or `python main.py -p`
+
+
 ### Using the Looker explores
 _More will be added to this in the future_
 
