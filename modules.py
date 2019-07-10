@@ -207,3 +207,15 @@ def parse_files(files, label, config=CONFIG, insert=True, debug=False):
             cur.execute("CREATE INDEX {0}_index ON {0}(index);".format(table_name))
             cur.execute("CREATE INDEX {0}_thread ON {0}(thread);".format(table_name))
             conn.commit()
+
+
+def print_labels(config=CONFIG):
+    table_name = config['table_name']
+    with psycopg2.connect("dbname='{dbname}' user='{user}' host='{host}'".format(**config)) as conn:
+        cur = conn.cursor()
+        try:
+            cur.execute("SELECT label FROM {} GROUP BY 1".format(table_name))
+            r = [row[0] for row in cur.fetchall()]
+            print("Existing labels in the table:\n{}\nUse --reset --clear and a label to delete it, or --reset on its own to delete all.".format(r))
+        except psycopg2.errors.UndefinedTable as e:
+            print("The table doesn't exist or is empty.")

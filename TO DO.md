@@ -1,4 +1,4 @@
 ### TO DO
-* Create a CLI for `main.py`
-* Clean up and test the LookML files
-  * Point it at the new db
+* CLI
+  * Add option to print all labels
+  * Print to command line when tearing down
