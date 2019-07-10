@@ -48,6 +48,7 @@ view: looker_logs {
   }
 
   dimension: query {
+    label: "Raw Text"
     type: string
     sql: ${TABLE}."query" ;;
     description: "This is the text of the log line itself"

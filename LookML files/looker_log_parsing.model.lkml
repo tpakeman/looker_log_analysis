@@ -1,20 +1,15 @@
-connection: "local_postgres"
+connection: "postgres_logs" # You may need to change this
 
 # include all the views
-include: "*.view"
+include: "looker_logs.view"
 
+# This is static data so we can cache it forever
 datagroup: looker_logs {
   sql_trigger: SELECT MAX(index) FROM looker_logs;;
   max_cache_age: "10000 hours"
 }
 
-persist_with: looker_logs
-
 explore: looker_logs {
-  always_filter: {
-    filters: {
-      field: label
-      value: "local_data"
-    }
-  }
+  persist_with: looker_logs
+  always_filter: {filters: {field: label}}
 }
