@@ -49,6 +49,9 @@
 * Check postgres is running correctly by opening the SQL client inside terminal
   * `psql mydatabasename`
 * [Follow the Looker setup steps here](https://docs.looker.com/setup-and-management/database-config/postgresql)
+  * **Important** We will need to grant additional priveleges when creating the user in this step:
+    * `GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO username;`
+    * `ALTER DEFAULT PRIVILEGES FOR USER username IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO username;`
 * `Ctrl + D` to quit the sql client
 
 
