@@ -48,8 +48,6 @@
   * `createdb mydatabasename`
 * Check postgres is running correctly by opening the SQL client inside terminal
   * `psql mydatabasename`
-* Create a new user called `looker`
-  * `CREATE USER looker;`
 * [Follow the Looker setup steps here](https://docs.looker.com/setup-and-management/database-config/postgresql)
 * `Ctrl + D` to quit the sql client
 
