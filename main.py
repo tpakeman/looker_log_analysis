@@ -5,13 +5,13 @@ import argparse
 if __name__ == '__main__':
     # This is a simple CLI interface that allows you to run the script with
     parser = argparse.ArgumentParser(description="""Choose one or more looker logfiles and upload them to the postgres database and table specified in `config.json` with a label to distinguish them from other uploads.""")
-    parser.add_argument('--reset', '-r', action='store_false', help='Clear the existing table')
-    parser.add_argument('--clear', '-c', type=str, help='Use with reset to clear a specific label from the table')
-    parser.add_argument('--print', '-p', action='store_false', help='Print the existing labels in the table')
-    parser.add_argument('--files', '-f', type=str, nargs='+', help='Add a space separated list of log files.')
-    parser.add_argument('--label', '-l', type=str, help='Choose a label to apply to this upload.')
+    parser.add_argument('--files', '-f', type=str, nargs='+', help='REQUIRED. Add a space separated list of log files.')
+    parser.add_argument('--label', '-l', type=str, help='REQUIRED. Choose a label to apply to this upload.')
     parser.add_argument('--silent', '-s', action='store_true', help='Surpress printing progress to the terminal. Default is False')
     parser.add_argument('--new', '-n', action='store_true', help='Including this will create a new table. Default is to insert into an existing table.')
+    parser.add_argument('--print', '-p', action='store_false', help='Print the existing labels in the table')
+    parser.add_argument('--reset', '-r', action='store_false', help='Clear the existing table')
+    parser.add_argument('--clear', '-c', type=str, help='Use with reset to clear a specific label from the table')
     args = parser.parse_args()
     if not args.print:
         modules.print_labels()

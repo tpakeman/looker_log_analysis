@@ -8,4 +8,4 @@ if __name__ == '__main__':
     modules.parse_files(files=logfile,
                         label='test_upload', # Something descriptive
                         insert=True,         # Use the existing table 
-                        debug=True).         # Print the output
+                        debug=True)         # Print the output

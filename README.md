@@ -49,9 +49,9 @@
 * Check postgres is running correctly by opening the SQL client inside terminal
   * `psql mydatabasename`
 * [Follow the Looker setup steps here](https://docs.looker.com/setup-and-management/database-config/postgresql)
-  * **Important** We will need to grant additional priveleges when creating the user in this step:
-    * `GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO username;`
-    * `ALTER DEFAULT PRIVILEGES FOR USER username IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO username;`
+  * **Important** We will need to grant additional privileges when creating the user in this step:
+    * `GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO looker;`
+    * `ALTER DEFAULT PRIVILEGES FOR USER looker IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO looker;`
 * `Ctrl + D` to quit the sql client
 
 
@@ -67,11 +67,13 @@
 
 ### 3. Run the python script to import files
 
-* Clone this repository to your machine
-* Update the `config.json` file in this directory, to include:
-  * `table_name`: the name of the table you would like to use in postgres
-    * It's a good idea to include the schema name here too
-    * _Default_ `public.looker_logs`
+* Ensure you have an installation of [python 3](https://www.python.org/downloads/)
+  * Install pip - python's package manager: `sudo easy_install pip`
+  * Install the `psycopg2` package using pip: `pip install psycopg2`
+* Git clone this repository
+* There is a `config.json` file in this directory which contains the settings used by the script. If any of the below settings are different in your setup you will need to update this file:
+  * `table_name`: the name of the table that will be used to store the log data. This doesn't exist yet but will be created by the script
+    * _Default_ `public.looker_logs` _(It's a good idea to include the schema name here too)_
   * `host`: the address of the postgres database
     * _Default:_ `localhost`
   * `dbname`: the name of the database you created at setup
@@ -79,21 +81,22 @@
   * `user`: the database user / role that you created at setup
     * * _Default_ `looker`
 * Run `test.py` to see the script in action:
-  * Call `modules.parse_files()` will write a log file to postgres:
-    * `files` should be the location of a logfile or array of logfiles
-    * `label` is the label to apply to this upload (useful if you want to differentiate between multiple uploads)
-    * `insert=True` to insert new rows into the existing table. `False` will delete the table and start from scratch
-    * `debug=True` will print the progress
-  * When you are finished, call `modules.teardown()` to delete the table specified in the config file and start again
-    * Optionally pass in a label to scrub data with a specific label from the table:
-      * e.g. `teardown(label='local_logs_2018')` 
+  * This assumes you have a log file located at `~/looker/log/looker.log` - you can customise the script to point at a different location if you want
+* Call `modules.parse_files()` will write a log file to postgres:
+  * `files` should be the location of a logfile or array of logfiles
+  * `label` is the label to apply to this upload (useful if you want to differentiate between multiple uploads)
+  * `insert=True` to insert new rows into the existing table. `False` will delete the table and start from scratch
+  * `debug=True` will print the progress
+* When you are finished, call `modules.teardown()` to delete the table specified in the config file and start again
+  * Optionally pass in a label to scrub data with a specific label from the table:
+    * e.g. `teardown(label='local_logs_2018')` 
 * Call `modules.test_connection()` to test the config file and return `True` for a successful connection
 * Call `modules.setup()` to create the table if it does not exist or tell you how many rows it already has
 * Call `modules.print_labels()` to see what upload labels currently exist in the table
 
 
 ### 3a. Running this from the command line
-  * You can run this from the command line by running `python main.py` in the appropriate directory.
+  * You can run this from the command line by navigating to the directory and running `python main.py`
   * There are various arguments:
     * `--help` or `-h` will print the instructions
     * `--reset` or `-r` will delete the existing postgres table
