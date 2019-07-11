@@ -66,6 +66,7 @@
 
 ### 3. Run the python script to import files
 
+* Clone this repository to your machine
 * Update the `config.json` file in this directory, to include:
   * `table_name`: the name of the table you would like to use in postgres
     * It's a good idea to include the schema name here too
