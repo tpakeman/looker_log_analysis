@@ -5,7 +5,7 @@
 /query_summary_app/app/uploads/**
 /query_summary_app/app/app.db
 /query_summary_app/app/demo/full_data.json
-
+/**/__pycache__/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

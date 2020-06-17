@@ -5,25 +5,26 @@ import json
 COLS = ['index', 'timestamp', 'label', 'loglevel', 'thread', 'source', 'query', 'query_summary']
 CONFIG = ConfigParser()
 CONFIG.read('config.txt')
+CONN_STRING = ' '.join([f"{k}='{v}'" for k, v in CONFIG['Connection'].items()])
 
-def test_connection(config=CONFIG):
+def test_connection():
     """Returns True if the configuration connects successfully"""
     try:
-        with psycopg2.connect("dbname='{dbname}' user='{user}' host='{host}'".format(**config)) as _:
+        with psycopg2.connect(CONN_STRING) as _:
             return True
     except(psycopg2.OperationalError) as e:
         print(e)
         return False
 
 
-def setup(config=CONFIG, force=False, rebuild=True, debug=False):
+def setup(force=False, rebuild=True, debug=False):
     """Tells you if the table specified in config already exists and creates it
      if it is not found. Use force=True to force the deletion and creation of a
      new table. Setting rebuild to False will drop the table with rebuilding it"""
-    if not test_connection(config):
+    if not test_connection():
         return False
-    table_name = config['table_name']
-    with psycopg2.connect("dbname='{dbname}' user='{user}' host='{host}'".format(**config)) as conn:
+    table_name = CONFIG['DB']['table_name']
+    with psycopg2.connect(CONN_STRING) as conn:
         cur = conn.cursor()
         if force:
             cur.execute("DROP TABLE IF EXISTS {};".format(table_name))
@@ -48,18 +49,18 @@ def setup(config=CONFIG, force=False, rebuild=True, debug=False):
                 if debug:
                     print("Exising table {} contains {:,} rows".format(table_name, r))
             except(psycopg2.ProgrammingError):
-                setup(config, force=True, debug=debug)
+                setup(force=True, debug=debug)
             conn.commit()
 
 
-def teardown(config=CONFIG, label=False, debug=False):
+def teardown(label=False, debug=False):
     """Pass in a label to drop specific rows from the table, or label=False to
      drop the whole table"""
-    table_name = config['table_name']
+    table_name = CONFIG['DB']['table_name']
     if not label:
-        setup(config, force=True, rebuild=False, debug=debug)
+        setup(force=True, rebuild=False, debug=debug)
     else:
-        with psycopg2.connect("dbname='{dbname}' user='{user}' host='{host}'".format(**config)) as conn:
+        with psycopg2.connect(CONN_STRING) as conn:
             cur = conn.cursor()
             cur.execute("SELECT COUNT(*) FROM {} WHERE label = '{}'".format(table_name, label))
             r = cur.fetchone()[0]
@@ -81,15 +82,15 @@ def parse(cur, conn, line, ix, ct, table_name, label, total, debug):
             q_data = json.dumps({d.strip().split(':')[0].strip(): d.strip().split(':')[1].strip()
                                  for d in query.split(';') if d.strip() != ''})
             s = """INSERT INTO {} ("index", "timestamp", "label", "loglevel", "thread", "source", "query", "query_summary")
-            VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}')""".format(table_name, ix, ts, label, log_level, process_id, source, query.replace("'", '"'), q_data.replace("'", "''"))
+            VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}')""".format(table_name, ix, ts, label.replace("'", '"'), log_level, process_id, source, query.replace("'", '"'), q_data.replace("'", "''"))
             cur.execute(s)
         except IndexError:
             s = """INSERT INTO {} ("index", "timestamp", "label", "loglevel", "thread", "source", "query")
-                    VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}')""".format(table_name, ix, ts, label, log_level, process_id, source, query.replace("'", '"'))
+                    VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}')""".format(table_name, ix, ts, label.replace("'", '"'), log_level, process_id, source, query.replace("'", '"'))
             cur.execute(s)
     else:
         s = """INSERT INTO {} ("index", "timestamp", "label", "loglevel", "thread", "source", "query")
-        VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}')""".format(table_name, ix, ts, label, log_level, process_id, source, query.replace("'", '"'))
+        VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}')""".format(table_name, ix, ts, label.replace("'", '"'), log_level, process_id, source, query.replace("'", '"'))
         cur.execute(s)
     if debug:
         if ct % 10000 == 0:
@@ -101,7 +102,7 @@ def parse(cur, conn, line, ix, ct, table_name, label, total, debug):
             print("Committing")
 
 
-def parse_files(files, label, config=CONFIG, insert=True, debug=False):
+def parse_files(files, label, insert=True, debug=False):
     """Pass in an array of logfiles and this will insert them into a Postgres table.
 
     Input
@@ -122,8 +123,8 @@ def parse_files(files, label, config=CONFIG, insert=True, debug=False):
         files = [files]
     skipped = 0
     skiplines = ''
-    table_name = config['table_name']
-    with psycopg2.connect("dbname='{dbname}' user='{user}' host='{host}'".format(**config)) as conn:
+    table_name = CONFIG['DB']['table_name']
+    with psycopg2.connect(CONN_STRING) as conn:
         cur = conn.cursor()
         ix = 0 # For indexing the rows
         ct = 0 # For counting the rows inserted
@@ -137,8 +138,8 @@ def parse_files(files, label, config=CONFIG, insert=True, debug=False):
             total = " / ~{:,}".format(est)
             print("Approx. {:,} log lines will be parsed".format(est))
         if not insert:
-            teardown(config, debug=debug)
-        setup(config, debug=debug)
+            teardown(debug=debug)
+        setup(debug=debug)
         cur.execute("SELECT MAX(index) FROM {}".format(table_name))
         max_index = cur.fetchone()[0]
         max_index = 0 if max_index is None else max_index
@@ -207,9 +208,9 @@ def parse_files(files, label, config=CONFIG, insert=True, debug=False):
             conn.commit()
 
 
-def print_labels(config=CONFIG):
-    table_name = config['table_name']
-    with psycopg2.connect("dbname='{dbname}' user='{user}' host='{host}'".format(**config)) as conn:
+def print_labels():
+    table_name = CONFIG['DB']['table_name']
+    with psycopg2.connect(CONN_STRING) as conn:
         cur = conn.cursor()
         try:
             cur.execute("SELECT label FROM {} GROUP BY 1".format(table_name))
