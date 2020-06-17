@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+<br>
+<div class="container-fluid" style="max-width: 70%">
+
+  <!-- File upload form -->
+  <form id='files-and-config' action = "{{url_for('send_config')}}" method = "POST">
+    <h3 style="margin-bottom: 20px">Upload logfiles</h3>
+    
+    <!-- File upload -->
+    <div class="input-group">
+      <div class="custom-file">
+        <input type="file" class="custom-file-input" id="file-input" multiple>
+        <label id="file-label" class="custom-file-label" for="file-input">Choose files</label>
+      </div>
+      <div class="input-group-append">
+        <button class="btn btn-outline-primary" id='submit-files' type="submit">Submit</button>
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div id='progress_indicator' style="display:none; margin-top: 20px;">
+      <h6>Progress</h6>
+      <div class="progress" id="progress-with-text">
+        <div id="progressbar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0;"></div>
+      </div>
+    </div>
+    <!-- Config -->
+      <hr>
+      <h3 style="margin-bottom: 20px">Config</h3>
+      <h5>Analysis options</h6>
+        <div class="form-check" style="margin-bottom: 10px">
+        <input class="form-check-input" type="radio" name="threadChoice" id="yesThreads" value="yes" checked>
+        <label class="form-check-label" for="yesThreads">
+          query_summary and thread data <i>(Slower but allows browsing db threads)</i>
+        </label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="threadChoice" id="noThreads" value="no">
+        <label class="form-check-label" for="noThreads">
+          query_summary only <i>(Fast)</i>
+        </label>
+      </div>
+      <div class=form-group>
+        <h5 style="margin-top: 20px">Chart options</h6>
+            <label for="chartLimit">Chart Row Limit</label>
+            <select class="form-control" id="chartLimit" name="chartLimit">
+              <option value="10">10 rows</option>
+              <option value="20" selected="selected">20 rows (recommended)</option>
+              <option value="30">30 rows</option>
+              <option value="50">50 rows</option>
+            </select>
+      </div>
+
+      <hr>
+    <!-- </div> -->
+  </form>
+  <script src="../static/file_upload.js"></script>
+
+  <!-- Demo form -->
+  <form id='log-demo' action = "/senddemo" method="POST">
+    <h4>or
+      <button class="btn btn-outline-primary" id='submit-files' type="submit">Proceed with demo data</button>
+    </h4>
+  </form>
+</div>
+
+{% endblock %}

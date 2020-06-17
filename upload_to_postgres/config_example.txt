@@ -1,0 +1,4 @@
+table_name=public.looker_logs
+host=localhost
+dbname=looker_logs
+user=tmp_user

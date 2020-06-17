@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>  
+    <title>Looker Log Parser</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" >
+    <link rel="stylesheet" href="../static/app.css">
+    {% block other_scripts %}{% endblock %}
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light justify-content-between">
+  <a class="navbar-brand" href="{{ url_for('home') }}"><i class="fas fa-home fa-fw"></i>{% if request.path == url_for('home') %}Looker Log Parser{% else %}Home{% endif %}
+  </a>
+  <script type="text/javascript" src="../static/clear.js"></script>
+    <form action="{{url_for('clear')}}" method="POST" id=clear><button class="btn btn-danger" type="warn">Clear cached data</button></form>
+</nav>
+<div class="container-fluid">
+{% block content %}{% endblock %}
+</div>
+</body>
+</html>

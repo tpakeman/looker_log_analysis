@@ -1,12 +1,26 @@
-# Analysing Looker logs... *in Looker!*
-*(With postgres)*
+# Summary
+### This contains some tools for parsing and analysing Looker log files
+* There are currently two main utilities in this repository:
+  * `upload_to_postgres/` - A CLI to parse one or more logfiles and upload them to a Postgres database
+    * `analyse_in_looker/` Contains a set of `.lkml` files that can be used to analyse this output in Looker
+  * `parse_logs/` - A Flask webapp to upload logfiles and visualise the query summary in the browser
+    * The `query_summary` section of Looker's logfiles contains a detailed breakdown of how long queries take to execute, including not only database query runtimes but also the time taken for Looker to process and render the returned data.
+    * This is helpful for isolating the bottleneck in slow query execution. 
+    * The functions found in `parse_logs/app/modules/parse.py` can also be used in isolation to parse logfiles and extract the query summary part
+
+### Requirements
+* Python 3.6+
+* For parsing to postgres
+  * `psycopg2` >=2.8
+* For the webapp
+  * `flask`
+  * `pandas`
 
 ---
+## Upload to Postgres
 
 ![Demo](demo.gif)
 
-
----
 
 ### What does this do?
 * This is a set of python scripts to upload a looker log file to a postgres database
@@ -23,17 +37,10 @@
   * Delete log files once you have finished using them
   * Use the `teardown()` functions here to remove log data from your local postgres database
 
+### Step by step instructions
 
-### What's in the repo
-* Instructions on running a local postgres database and connecting it to Looker
-* Python 3 scripts to parse logfiles into postgres and instructions for running this from the command line
-* LookML files to analyse the logfiles from postgres
-
-
----
-
-### 1. Running postgres locally
-
+#### 1. Running postgres locally
+*These instructions are for Mac OS X*
 [Good instructions here](https://www.robinwieruch.de/postgres-sql-macos-setup/)
 
 * Check if postgres is already installed
@@ -55,23 +62,23 @@
 * `Ctrl + D` to quit the sql client
 
 
-### 2. Set up your Looker instance to run the analysis
+#### 2. Set up your Looker instance to run the analysis
 
 * Create a new connection in Looker to your local postgres
   * Postgres runs on `localhost:5432` by default
   * The default postgres schema is `public`
   * Use the username and password you chose during setup
 * Create a new project for the log analysis
-  * Copy the files included in the `LookML files` folder here
+  * Copy the files included in the `/analyse_in_looker/` directory here
 
 
-### 3. Run the python script to import files
+#### 3. Run the python script to import files
 
 * Ensure you have an installation of [python 3](https://www.python.org/downloads/)
   * Install pip - python's package manager: `sudo easy_install pip`
   * Install the `psycopg2` package using pip: `pip install psycopg2`
 * Git clone this repository
-* There is a `config.json` file in this directory which contains the settings used by the script. If any of the below settings are different in your setup you will need to update this file:
+* There is a `config_example.txt` file in this directory which contains the settings used by the script. You should duplicate this file, call it `config.txt` and change any of the defaults below:
   * `table_name`: the name of the table that will be used to store the log data. This doesn't exist yet but will be created by the script
     * _Default_ `public.looker_logs` _(It's a good idea to include the schema name here too)_
   * `host`: the address of the postgres database
@@ -95,7 +102,7 @@
 * Call `modules.print_labels()` to see what upload labels currently exist in the table
 
 
-### 3a. Running this from the command line
+#### 3a. Running this from the command line
   * You can run this from the command line by navigating to the directory and running `python main.py`
   * There are various arguments:
     * `--help` or `-h` will print the instructions
@@ -124,8 +131,8 @@
   * `python main.py --print` or `python main.py -p`
 
 
-### Using the Looker explores
-_More will be added to this in the future_
+#### Using the Looker explores
+*More will be added to this in the future*
 
 * The LookML files included create a single view and a single explore based on this table
 * The explore has an `always_filter` on the `label` so you can isolate a specific upload
@@ -142,6 +149,42 @@ _More will be added to this in the future_
   * The script here splits out the query summary and parses the individual components. They are in a seperate section in the view file
   * More information can be found on query_summary in guru.
 
-### Requirements
-* Python 3.6+
-* `psycopg2`
+---
+## The Webapp and scripts
+
+### Information included
+* The `time taken` (in seconds) for each step of the query execution
+  * _Details of these steps and what they mean are not included here_
+* The query `timestamp`
+* The database thread (`process_id`) to cross reference against the rest of the logs
+* The `query_source` (dashboard, api, explore, etc.)
+* The `dashboard_id` (if relevant)
+* The query `slug` for cross referencing against other logging tools such as the system activity model. 
+
+---
+# Demo
+![Demo](flask_demo.gif)
+
+---
+## Using the Flask App
+* Make sure you have the correct modules installed
+* Run `app/main.py` and then access `localhost:5000`
+
+---
+## Using just the script
+* This currently must be run from within python, but a CLI is a work in progress
+* The simplest way to run this is to use the `logs_to_csv` function in `app/modules/parse` and pass in a directory of logfiles and a csv file for the output. Pass `debug=True` to print the progress. See an example of this in `/demo.py`
+
+---
+
+### Contents
+* `/demo.py` contains an example script to combine and run the functions contained in `/modules`
+* Everything else is saved inside `/app`:
+  * `/modules`:
+    * `parse.py` contains functions to parse the query_summary from the logfiles and save to 
+   csv or json
+    * `analyse.py` contains functions to manipulate and analyse this data in pandas.
+  * `/static` and `/templates` contain the html, css and js used by the app
+  * `/data` and `/uploads` are where the log data is stored during the app session
+  * `/demo` contains sanitised log data to use in the demo
+  * `/main.py` is the main Flask script

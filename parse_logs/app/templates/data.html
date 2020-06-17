@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block other_scripts %}
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/data.js"></script>
+<script src="https://code.highcharts.com/modules/no-data-to-display.js"></script>
+<script type="text/javascript" src="../static/analysis.js"></script>
+
+{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    {% if config['summary']['has_data'] %}
+<div id="date-container" style="width:100%; height:400px;">
+<script type="text/javascript">dateChart(JSON.stringify({{config['by_date'] | safe}}),'date-container', 'Average query time', 'Data for {{config['summary']['records']}} queries over {{config['summary']['numdays']}} days');</script>
+</div>
+</div>
+
+{% if config['thread_performance'] is not none %}
+<div class="container-fluid">
+<div id='thread-container'>
+
+  <!-- Demo currently doesn't have thread explorer - so skip -->
+  {% if demo %}
+        <script type="text/javascript">console.log("demo: {{demo}}"); colChart(JSON.stringify({{config['thread_performance']['labels'] | safe}}), JSON.stringify({{config['thread_performance']['series'] | safe}}), 'thread-container', 'Breakdown of slowest threads');</script>
+  {% else %}
+
+  <!-- Use the version with thread links in real usage -->
+  <script type="text/javascript">threadChart(JSON.stringify({{config['thread_performance']['labels'] | safe}}), JSON.stringify({{config['thread_performance']['series'] | safe}}), 'thread-container', 'Breakdown of slowest threads');</script>
+  {% endif %}
+
+          </div>
+{% endif %}
+{% if config['dashboard_performance'] is not none %}
+<div id='dashboard-container'>
+        <script type="text/javascript">dashboardChart(JSON.stringify({{config['dashboard_performance']['labels'] | safe}}), JSON.stringify({{config['dashboard_performance']['series'] | safe}}), 'dashboard-container', 'Breakdown of slowest dashboards');</script>
+    </div>
+{% endif %}
+{% if config['source_performance'] is not none %}
+<div id='source-container'>
+        <script type="text/javascript">colChart(JSON.stringify({{config['source_performance']['labels'] | safe}}), JSON.stringify({{config['source_performance']['series'] | safe}}), 'source-container', 'Breakdown of slowest sources');</script>
+        </div>
+</div>
+{% endif %}
+{%else%}
+<div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
+  <main role="main" class="inner cover">
+    <h1 class="cover-heading">No query summary data.</h1>
+    <p class="lead">Upload different logfiles or try with demo data.</p>
+    <p class="lead">
+      <a href="{{ url_for('home')}}" class="btn btn-lg btn-secondary">Return to start</a>
+    </p>
+  </main>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,4 +1,5 @@
 ### TO DO
+**Upload to postgres**
 * CLI
   * Print to command line when tearing down
   * Add a 'test' option to see the table setup status
@@ -8,3 +9,6 @@
 * Future
   * Make it possible to upload all logfiles in a directory
 
+**Parse logs**
+* Retire the webapp (needs a big refresh)
+* Make the CLI for parsing more useful

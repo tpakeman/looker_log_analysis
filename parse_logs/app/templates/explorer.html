@@ -1,0 +1,53 @@
+<!-- TO DO -->
+<!-- Add dashboard explorer -->
+<!-- Add option to do another thread - choose from dropdown - must be returned in config-->
+<!-- Fix demo (subset in upload data - just the 10 threads and dashboards that show, then sanitise) -->
+<!-- Fix source explorer -->
+
+{% extends "base.html" %}
+{% block other_scripts %}
+<script type="text/javascript" src="../static/analysis.js"></script>
+{% endblock %}
+{% block content%}
+<!-- Find a way to make the filtering more performant - add a search button or show top n rows -->
+<div class="container-fluid">
+<br>
+<h4 style="margin-bottom: 20px;">Viewing log information for thread {{thread_id}}</h3>
+<div class="input-group mb-3">
+  <input list='thread-lookup' id='thread-search' type="text" class="form-control" placeholder="Choose another Thread">
+  <datalist id="thread-lookup">
+  {% for option in thread_list %}<option value="{{option}}"/>{% endfor %}
+</datalist>
+  <div class="input-group-append">
+    <button class="btn btn-outline-secondary" type="button" id="button-addon2" onclick="loadThread(document.getElementById('thread-search').value)"
+    >Reload</button>
+  </div>
+</div><hr>
+<h3>Thread data</h3>
+<div style="margin-bottom: 20px"><input type="text" class="form-control" id="filter-table" onkeyup="searchTable('filter-table','thread-table')" placeholder="Filter table by keyword"></div>
+<table class="table table-hover" id=thread-table>
+  <thead class="thead-light">
+    <tr>
+      <th scope="col">Timestamp</th>
+      <th scope="col">Row #</th>
+      <th scope="col">Thread</th>
+      <th scope="col">Source</th>
+      <th scope="col">Query</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for k, v in data.items() %}
+     <tr>
+     <th scope="row" style="font-size: small; text-align: left">{{k.split(' ')[0]}} <i style="
+    font-weight: lighter;">{{k.split(' ')[1].split('.')[0]}}</i></th>
+      <td style="font-size: small;"/>{{v['rownum']}}
+      <td style="font-size: small;"/>{{v['process_id']}}
+      <td style="font-size: small;"/>{{v['source']}}
+      <td style="font-size: small;"/>{{v['query']}}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+</div>
+{% endblock %}
