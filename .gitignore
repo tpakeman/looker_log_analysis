@@ -1,10 +1,10 @@
 # Repo specific
 /upload_to_postgres/errors.txt
 /upload_to_postgres/config.txt
-/parse_logs/app/data/**
-/parse_logs/app/uploads/**
-/parse_logs/app/app.db
-/parse_logs/app/demo/full_data.json
+/query_summary_app/app/data/**
+/query_summary_app/app/uploads/**
+/query_summary_app/app/app.db
+/query_summary_app/app/demo/full_data.json
 
 
 # Byte-compiled / optimized / DLL files

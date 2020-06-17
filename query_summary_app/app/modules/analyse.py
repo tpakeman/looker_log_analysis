@@ -142,6 +142,6 @@ def read_config(df, request):
 
 # if __name__ == '__main__':
 #     import os
-#     with open(os.path.join(os.path.expanduser('~'), 'Documents/python/looker/looker_log_performance_summary/parse_logs/app/demo/config.json'), 'r') as f:
+#     with open(os.path.join(os.path.expanduser('~'), 'Documents/python/looker/looker_log_performance_summary/query_summary_app/app/demo/config.json'), 'r') as f:
 #         data = json.loads(f.read())
 #     print(data.keys())
