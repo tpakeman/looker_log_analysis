@@ -7,5 +7,4 @@ if __name__ == '__main__':
     logfile = path.join(path.expanduser('~'), 'looker', 'log', 'looker.log')
     modules.parse_files(files=logfile,
                         label='test_upload', # Something descriptive
-                        insert=True,         # Use the existing table 
-                        debug=True)         # Print the output
+                        insert=True)         # Use the existing table

@@ -55,7 +55,7 @@
   * I recommend also using a virtual environment such as [`pipenv`](https://pypi.org/project/pipenv/)
 * Git clone this repository
   * Install the required packages using pip or pipenv: `pip install -r requirements.txt` or `pipenv shell && pipenv install`
-* There is a `config_example.txt` file in this directory which contains the settings used by the script. You should duplicate this file, call it `config.txt` and change any of the defaults below:
+* There is a `config_exmaple.ini` file in this directory which contains the settings used by the script. You should duplicate this file, call it `config.ini` and change any of the defaults below:
   * `table_name`: the name of the table that will be used to store the log data. This doesn't exist yet but will be created by the script
     * _Default_ `public.looker_logs` _(It's a good idea to include the schema name here too)_
   * `host`: the address of the postgres database
@@ -70,7 +70,6 @@
   * `files` should be the location of a logfile or array of logfiles
   * `label` is the label to apply to this upload (useful if you want to differentiate between multiple uploads)
   * `insert=True` to insert new rows into the existing table. `False` will delete the table and start from scratch
-  * `debug=True` will print the progress
 * When you are finished, call `modules.teardown()` to delete the table specified in the config file and start again
   * Optionally pass in a label to scrub data with a specific label from the table:
     * e.g. `teardown(label='local_logs_2018')` 
@@ -111,3 +110,23 @@
 * Python 3.6+
 * For parsing to postgres
   * `psycopg2` >=2.8
+
+---
+### TO DO
+* Make parsing object-oriented
+* Use configparser
+
+**Upload to postgres**
+* CLI
+  * Add log output to stdout, but prevent if --silent passed
+  * Print to command line when tearing down
+  * Add a 'test' option to see the table setup status
+* Functionality
+  * Make the test_connection option more explicit in terms of what is working
+  * Make sure the index auto-increments correctly
+* Future
+  * Make it possible to upload all logfiles in a directory
+
+**Parse logs**
+* Retire the webapp (needs a big refresh)
+* Make the CLI for parsing more useful
