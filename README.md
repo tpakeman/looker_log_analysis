@@ -113,9 +113,8 @@
 
 ---
 ### TO DO
-* Make parsing object-oriented
-* Use configparser
-
+* Unit tests!
+  
 **Upload to postgres**
 * CLI
   * Add log output to stdout, but prevent if --silent passed
