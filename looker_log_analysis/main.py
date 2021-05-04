@@ -1,5 +1,6 @@
 # !/usr/bin/env python3
 import ingest
+from log import LOG
 import argparse
 
 def main():
@@ -8,14 +9,16 @@ def main():
     parser.add_argument('--label', '-l', type=str, help='REQUIRED. Choose a label to apply to this upload.')
     parser.add_argument('--silent', '-s', action='store_true', help='Surpress printing progress to the terminal. Default is False')
     parser.add_argument('--new', '-n', action='store_true', help='Including this will create a new table. Default is to insert into an existing table.')
-    parser.add_argument('--print', '-p', action='store_false', help='Print the existing labels in the table')
-    parser.add_argument('--reset', '-r', action='store_false', help='Clear the existing table')
+    parser.add_argument('--print', '-p', action='store_true', help='Print the existing labels in the table')
+    parser.add_argument('--reset', '-r', action='store_true', help='Clear the existing table')
     parser.add_argument('--clear', '-c', type=str, help='Use with reset to clear a specific label from the table')
     # parser.add_argument('--test', '-t', type=str, help='Test that the script has been set up correctly')
     args = parser.parse_args()
-    if not args.print:
+    if args.silent:
+        LOG.handlers = []
+    if args.print:
         ingest.print_labels()
-    elif not args.reset:
+    elif args.reset:
         if args.clear is None:
             ans = input("This will delete the whole table, proceed?\n[y/n]\n")
             if ans.lower() == 'y':

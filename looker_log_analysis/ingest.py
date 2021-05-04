@@ -1,7 +1,7 @@
 
 import psycopg2
 from datetime import datetime as dt
-from log import log
+from log import LOG
 from config import CONFIG
 from parse import LineParser
 
@@ -16,7 +16,7 @@ def test_connection():
         with connect():
             return True
     except(psycopg2.OperationalError) as e:
-        log('error', e)
+        LOG.error(e)
         raise(e)
 
 
@@ -42,13 +42,13 @@ def setup(force=False, rebuild=True):
                                                {} text,
                                                {} text,
                                                {} text);""".format(table_name, *COLS))
-                log('info', f"Successfully created new table {table_name}")
+                LOG.info(f"Successfully created new table {table_name}")
             conn.commit()
         else:
             try:
                 cur.execute(f"SELECT COUNT(*) FROM {table_name}")
                 r = cur.fetchone()[0]
-                log('info', f"Exising table {table_name} contains {r:,} rows")
+                LOG.info(f"Exising table {table_name} contains {r:,} rows")
             except(psycopg2.ProgrammingError):
                 setup(force=True)
             conn.commit()
@@ -66,7 +66,7 @@ def teardown(label=False):
             cur.execute(f"SELECT COUNT(*) FROM {table_name} WHERE label = '{label}'")
             r = cur.fetchone()[0]
             cur.execute(f"DELETE FROM {table_name} WHERE label = '{label}'")
-            log('info', f"Successfully deleted {r:,} rows with label {label} from {table_name}")
+            LOG.info(f"Successfully deleted {r:,} rows with label {label} from {table_name}")
             conn.commit()
 
 
@@ -80,10 +80,10 @@ def parse(cur, conn, line, ix, ct, table_name, label, total, starttime, lasttime
         avg_call_time = elapsed / ct
         est_completed_time = avg_call_time * total
         remaining = est_completed_time - elapsed
-        log('info', f"Successfully written {ct:,} / ~{total:,} rows (est. {remaining:,.0f} seconds remaining)")
+        LOG.info(f"Successfully written {ct:,} / ~{total:,} rows (est. {remaining:,.0f} seconds remaining)")
     if ct % int(CONFIG['App']['commit_interval']) == 0:
         conn.commit()
-        log('debug', "Committing")
+        LOG.debug("Committing")
     return dt.now()
 
 
@@ -128,7 +128,7 @@ def parse_files(files, label, insert=True):
             with open(file, 'r', encoding='UTF-8') as f:
                 for line in f:
                     est += 1
-        log('info', f"Approx. {est:,} log lines will be parsed")
+        LOG.info(f"Approx. {est:,} log lines will be parsed")
         if not insert:
             teardown()
         setup()
@@ -159,8 +159,7 @@ def parse_files(files, label, insert=True):
                                       lasttime=last)
                             except ValueError:
                                 skipped += 1
-                                log('error', 'Error parsing line')
-                                log('error', f'{file}:{ix}\t{line}\n')
+                                LOG.debug(f'Error parsing line: {file}:{ix}\t{line}'.strip())
                                 continue
                         parse_line = rawline
                     else:
@@ -181,15 +180,14 @@ def parse_files(files, label, insert=True):
                   lasttime=last)
         except Exception:
             skipped += 1
-            log('error', 'Unhandled error')
-            log('error', f'{file}:{ix}\t{line}\n')
+            LOG.debug(f'Unhandled error: {file}:{ix}\t{line}'.strip())
         conn.commit()
         if insert:
-            log('info', f"Successfully inserted {ct:,} new rows")
+            LOG.info(f"Successfully inserted {ct:,} new rows")
         else:
-            log('info', f"Successfully written {ct:,} rows")
+            LOG.info(f"Successfully written {ct:,} rows")
         if skipped > 0:
-            log('warn', f"Skipped {skipped:,} lines and saved output to log")
+            LOG.warn(f"Skipped {skipped:,} lines and saved output to log")
         if not insert:
             index_table(table_name, cur)
             conn.commit()
@@ -204,8 +202,8 @@ def print_labels():
             r = [row[0] for row in cur.fetchall()]
             conn.commit()
             if r == []:
-                log('info', "The table is empty.")
+                LOG.info("The table is empty.")
             else:
-                log('info', f"Existing labels in the table:\n{r}\nUse --reset --clear and a label to delete it, or --reset on its own to delete all.")
+                LOG.info(f"Existing labels in the table:\n{r}\nUse --reset --clear and a label to delete it, or --reset on its own to delete all.")
         except psycopg2.errors.UndefinedTable:
-            log('error', "The table doesn't exist.")
+            LOG.error("The table doesn't exist.")
