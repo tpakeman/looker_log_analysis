@@ -1,11 +1,9 @@
 # Repo specific
-/upload_to_postgres/errors.txt
-/upload_to_postgres/config.txt
-/query_summary_app/app/data/**
-/query_summary_app/app/uploads/**
-/query_summary_app/app/app.db
-/query_summary_app/app/demo/full_data.json
-/**/__pycache__/
+log/**
+data/**
+config.ini
+**/__pycache__/
+.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

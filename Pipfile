@@ -4,8 +4,7 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+autopep8 = "*"
 
 [packages]
 psycopg2 = ">=2.8"
-flask = "1.1.2"
-pandas = ">=0.22"

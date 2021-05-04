@@ -1,8 +1,0 @@
-[Connection]
-host=localhost
-dbname=looker_log
-password=looker
-user=postgres
-
-[DB]
-table_name=public.looker_logs
