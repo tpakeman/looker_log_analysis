@@ -30,6 +30,7 @@
   * `pg_ctl -D /usr/local/var/postgres start`
 * Create an actual database
   * `createdb mydatabasename`
+    * *NOTE - this should match the 'Connection' configuration in your config file*
 * Check postgres is running correctly by opening the SQL client inside terminal
   * `psql mydatabasename`
 * [Follow the Looker setup steps here](https://docs.looker.com/setup-and-management/database-config/postgresql)
@@ -114,18 +115,14 @@
 ---
 ### TO DO
 * Unit tests!
-  
-**Upload to postgres**
+* Improve parsing coverage
 * CLI
   * Add log output to stdout, but prevent if --silent passed
   * Print to command line when tearing down
-  * Add a 'test' option to see the table setup status
+  * Print command should show row counts and date of last upload
+  * Add a 'test' option to see the table setup status and check connectivity
 * Functionality
   * Make the test_connection option more explicit in terms of what is working
   * Make sure the index auto-increments correctly
 * Future
   * Make it possible to upload all logfiles in a directory
-
-**Parse logs**
-* Retire the webapp (needs a big refresh)
-* Make the CLI for parsing more useful

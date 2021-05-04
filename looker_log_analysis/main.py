@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
-from looker_log_analysis import ingest, log
+# !/usr/bin/env python3
+import ingest
 import argparse
 
 def main():
@@ -11,6 +11,7 @@ def main():
     parser.add_argument('--print', '-p', action='store_false', help='Print the existing labels in the table')
     parser.add_argument('--reset', '-r', action='store_false', help='Clear the existing table')
     parser.add_argument('--clear', '-c', type=str, help='Use with reset to clear a specific label from the table')
+    # parser.add_argument('--test', '-t', type=str, help='Test that the script has been set up correctly')
     args = parser.parse_args()
     if not args.print:
         ingest.print_labels()
