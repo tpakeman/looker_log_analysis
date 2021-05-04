@@ -1,21 +1,48 @@
 from json import dumps
-
+from log import LOG
 
 class LineParser(object):
-    def __init__(self, data, ix, label, table_name):
+    def __init__(self,
+                 data,
+                 ix,
+                 label,
+                 table_name,
+                 file_name):
         self.data = data
+        # Strip ?
         self.table_name = table_name
+        self.file_name = file_name
         self.ix = ix
         self.label = label.replace("'", '"')
         self.query_summary = None
         self.sql = None
-        self.parts = self.data.split(' :: ')
-        self.info = self.parts[0]
-        self.query = ' :: '.join(self.parts[1:]).replace("'", '"')
-        self.ts, self.meta = self.info.split(' [')
-        self.log_level, self.process_id, self.source = self.meta[:-1].split('|')
+        self.parts = None
+        self.info = None
+        self.query = None
+        self.ts = None
+        self.meta = None
+        self.log_level = None
+        self.process_id = None
+        self.source = None
         self.has_query_summary = 'query_summary' in self.data
-        self._produce_sql()
+        self.success = False
+        self._parse()
+
+    def _parse(self):
+        if self.data.strip() == '':
+            self.success = False
+        else:
+            try:
+                self.parts = self.data.split(' :: ')
+                self.info = self.parts[0]
+                self.query = ' :: '.join(self.parts[1:]).replace("'", '"')
+                self.ts, self.meta = self.info.split(' [')
+                self.log_level, self.process_id, self.source = self.meta[:-1].split('|')
+                self.success = True
+                self._produce_sql()
+            except ValueError as e:
+                self.success = False
+                LOG.debug(f'Error parsing line: {self.file_name}:{self.ix}\t{self.data.strip()}:\n{str(e)}')
 
     def _produce_sql(self):
         if self.has_query_summary:

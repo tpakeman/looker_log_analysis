@@ -1,5 +1,5 @@
 # !/usr/bin/env python3
-import ingest
+import db
 from log import LOG
 import argparse
 
@@ -17,16 +17,16 @@ def main():
     if args.silent:
         LOG.handlers = []
     if args.print:
-        ingest.print_labels()
+        db.print_labels()
     elif args.reset:
         if args.clear is None:
             ans = input("This will delete the whole table, proceed?\n[y/n]\n")
             if ans.lower() == 'y':
-                ingest.teardown()
+                db.teardown()
         else:
-            ans = input("This will delete the label '{}' from table, proceed?\n[y/n]\n".format(args.clear))
+            ans = input(f"This will delete the label '{args.clear}' from table, proceed?\n[y/n]\n")
             if ans.lower() == 'y':
-                ingest.teardown(label=args.clear)
+                db.teardown(label=args.clear)
     else:
         if args.clear is not None:
             parser.error("--clear must be used with the --reset argument")
@@ -36,11 +36,11 @@ def main():
             if args.new:
                 ans = input("The --new argument will wipe the existing table and make a new one, proceed?\n[y/n]\n")
                 if ans.lower() == 'y':
-                    ingest.parse_files(files=args.files,
+                    db.parse_files(files=args.files,
                                         label=args.label,
                                         insert=not args.new)
             else:
-                ingest.parse_files(files=args.files,
+                db.parse_files(files=args.files,
                                     label=args.label,
                                     insert=not args.new)
 
