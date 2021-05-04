@@ -16,7 +16,8 @@ def setup_years(start_year, n):
     """Produce a tuple of years, starting with start_year
     and going back n years. The output is in the format 
     (YYYY-, YYYY-, ...)
-    Used to validate which loglines begin with a year
+    Used to validate which loglines begin with one of a 
+    set of valid years
     """
     output = [f"{start_year}-"]
     for i in range(int(n), 0, -1):

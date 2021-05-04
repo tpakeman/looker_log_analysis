@@ -50,7 +50,7 @@ def setup(force=False, rebuild=True, config=CONFIG):
             try:
                 cur.execute(f"SELECT COUNT(*) FROM {table_name}")
                 r = cur.fetchone()[0]
-                LOG.info(f"Exising table {table_name} contains {r:,} rows")
+                LOG.info(f"Existing table {table_name} contains {r:,} rows")
             except(psycopg2.ProgrammingError) as e:
                 LOG.warn(str(e))
                 setup(force=True, config=config)
@@ -117,12 +117,11 @@ def parse_files(files, label, insert=True, config=CONFIG):
     valid_years = setup_years(dt.now().year, CONFIG['App']['valid_years_back'])
     with connect() as conn:
         cur = conn.cursor()
-        ix = 1 # For indexing the rows
         ct = 1 # For counting the rows inserted
         est = 0 # For estimating the progress
         for file in files:
             with open(file, 'r', encoding='UTF-8') as f:
-                for line in f:
+                for _ in f:
                     est += 1
         LOG.info(f"Approx. {est:,} log lines will be parsed")
         if not insert:
@@ -130,7 +129,7 @@ def parse_files(files, label, insert=True, config=CONFIG):
         setup(config=config)
         cur.execute(f"SELECT MAX(index) FROM {table_name}")
         max_index = cur.fetchone()[0]
-        max_index = 0 if max_index is None else max_index
+        max_index = 1 if max_index is None else max_index
         ix = max_index
         parse_line = ''
         for file in files:
@@ -138,30 +137,28 @@ def parse_files(files, label, insert=True, config=CONFIG):
                 for rawline in f:
                     if should_skip(rawline):
                         continue
-                    elif rawline.strip().startswith(valid_years):
-                        # Accommodate multi-lines by only processing ones starting this year
-                        if parse_line != '':
-                            success = parse(cur=cur,
-                                            conn=conn,
-                                            line=parse_line,
-                                            ix=ix,
-                                            ct=ct,
-                                            table_name=table_name,
-                                            label=label,
-                                            file=file,
-                                            total=est,
-                                            starttime=starttime,
-                                            config=config)
-                            if success:
-                                ix += 1
-                                ct += 1
-                            else:
-                                skipped += 1
-                                continue
-                        parse_line = rawline
-                    else:
+                    elif not rawline.strip().startswith(valid_years):
                         parse_line += rawline
                         continue
+                    else:
+                        success = parse(cur=cur,
+                                        conn=conn,
+                                        line=parse_line,
+                                        ix=ix,
+                                        ct=ct,
+                                        table_name=table_name,
+                                        label=label,
+                                        file=file,
+                                        total=est,
+                                        starttime=starttime,
+                                        config=config)
+                        if success:
+                            ix += 1
+                            ct += 1
+                        else:
+                            skipped += 1
+                            continue
+                        parse_line = rawline
         success = parse(cur=cur,
                         conn=conn,
                         line=parse_line,
