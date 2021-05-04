@@ -1,6 +1,7 @@
 from configparser import ConfigParser
 import psycopg2
 import json
+from datetime import datetime as dt
 
 COLS = ['index', 'timestamp', 'label', 'loglevel', 'thread', 'source', 'query', 'query_summary']
 CONFIG = ConfigParser()
@@ -27,9 +28,9 @@ def setup(force=False, rebuild=True, debug=False):
     with psycopg2.connect(CONN_STRING) as conn:
         cur = conn.cursor()
         if force:
-            cur.execute("DROP TABLE IF EXISTS {};".format(table_name))
-            cur.execute("DROP INDEX IF EXISTS {}_index;".format(table_name))
-            cur.execute("DROP INDEX IF EXISTS {}_thread;".format(table_name))
+            cur.execute(f"DROP TABLE IF EXISTS {table_name};")
+            cur.execute(f"DROP INDEX IF EXISTS {table_name}_index;")
+            cur.execute(f"DROP INDEX IF EXISTS {table_name}_thread;")
             if rebuild:
                 cur.execute("""CREATE TABLE {}({} integer PRIMARY KEY,
                                                {} timestamp,
@@ -40,14 +41,14 @@ def setup(force=False, rebuild=True, debug=False):
                                                {} text,
                                                {} text);""".format(table_name, *COLS))
                 if debug:
-                    print("Successfully created new table {}".format(table_name))
+                    print(f"Successfully created new table {table_name}")
             conn.commit()
         else:
             try:
-                cur.execute("SELECT COUNT(*) FROM {}".format(table_name))
+                cur.execute(f"SELECT COUNT(*) FROM {table_name}")
                 r = cur.fetchone()[0]
                 if debug:
-                    print("Exising table {} contains {:,} rows".format(table_name, r))
+                    print(f"Exising table {table_name} contains {r:,} rows")
             except(psycopg2.ProgrammingError):
                 setup(force=True, debug=debug)
             conn.commit()
@@ -62,15 +63,15 @@ def teardown(label=False, debug=False):
     else:
         with psycopg2.connect(CONN_STRING) as conn:
             cur = conn.cursor()
-            cur.execute("SELECT COUNT(*) FROM {} WHERE label = '{}'".format(table_name, label))
+            cur.execute(f"SELECT COUNT(*) FROM {table_name} WHERE label = '{label}'")
             r = cur.fetchone()[0]
-            cur.execute("DELETE FROM {} WHERE label = '{}'".format(table_name, label))
+            cur.execute(f"DELETE FROM {table_name} WHERE label = '{label}'")
             if debug:
-                print("Successfully deleted {:,} rows with label {} from {}".format(r, label, table_name))
+                print(f"Successfully deleted {r:,} rows with label {label} from {table_name}")
             conn.commit()
 
 
-def parse(cur, conn, line, ix, ct, table_name, label, total, debug):
+def parse(cur, conn, line, ix, ct, table_name, label, total, debug, starttime, lasttime):
     """Parse a log line into a postgres update statement"""
     parts = line.split(' :: ')
     info = parts[0]
@@ -93,13 +94,20 @@ def parse(cur, conn, line, ix, ct, table_name, label, total, debug):
         VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}')""".format(table_name, ix, ts, label.replace("'", '"'), log_level, process_id, source, query.replace("'", '"'))
         cur.execute(s)
     if debug:
-        if ct % 10000 == 0:
+        print(f"Index: {ix:<5} Inserted:{ct:<5}")
+        if ct % 1000 == 0:
+            newtime = dt.now()
+            elapsed = (newtime - starttime).total_seconds()
+            avg_call_time = elapsed / ct
+            est_completed_time = avg_call_time * total
+            remaining = est_completed_time - elapsed
             if debug:
-                print("Successfully written {:,}{} rows".format(ct, total))
-    if ct % 100000 == 0:
+                print(f"Successfully written {ct:,} / ~{total:,} rows (est. {remaining:,.0f} seconds remaining)")
+    if ct % 50000 == 0:
         conn.commit()
         if debug:
             print("Committing")
+    return dt.now()
 
 
 def parse_files(files, label, insert=True, debug=False):
@@ -121,22 +129,23 @@ def parse_files(files, label, insert=True, debug=False):
     """
     if not isinstance(files, list):
         files = [files]
+    starttime = dt.now()
+    last = dt.now()
     skipped = 0
+    est = 0
     skiplines = ''
     table_name = CONFIG['DB']['table_name']
     with psycopg2.connect(CONN_STRING) as conn:
         cur = conn.cursor()
         ix = 0 # For indexing the rows
         ct = 0 # For counting the rows inserted
-        total = ''
         if debug:
             est = 0 # For estimating the progress
             for file in files:
                 with open(file, 'r', encoding='UTF-8') as f:
                     for line in f:
                         est += 1
-            total = " / ~{:,}".format(est)
-            print("Approx. {:,} log lines will be parsed".format(est))
+            print(f"Approx. {est:,} log lines will be parsed")
         if not insert:
             teardown(debug=debug)
         setup(debug=debug)
@@ -159,15 +168,17 @@ def parse_files(files, label, insert=True, debug=False):
                             try:
                                 ix += 1
                                 ct += 1
-                                parse(cur=cur,
+                                last = parse(cur=cur,
                                       conn=conn,
                                       line=parse_line,
                                       ix=ix,
                                       ct=ct,
                                       table_name=table_name,
                                       label=label,
-                                      total=total,
-                                      debug=debug)
+                                      total=est,
+                                      debug=debug,
+                                      starttime=starttime,
+                                      lasttime=last)
                             except ValueError:
                                 skipped += 1
                                 skiplines += '{}:{}\t{}\n'.format(file, ix, line)
@@ -179,15 +190,17 @@ def parse_files(files, label, insert=True, debug=False):
         try:
             ix += 1
             ct += 1
-            parse(cur=cur,
+            last = parse(cur=cur,
                   conn=conn,
                   line=parse_line,
                   ix=ix,
                   ct=ct,
                   table_name=table_name,
                   label=label,
-                  total=total,
-                  debug=debug)
+                  total=est,
+                  debug=debug,
+                  starttime=starttime,
+                  lasttime=last)
         except Exception:
             skipped += 1
             skiplines += '{}:{}\t{}\n'.format(file, ix, parse_line)
@@ -197,14 +210,14 @@ def parse_files(files, label, insert=True, debug=False):
                 f.write(skiplines)
         if debug:
             if insert:
-                print("Successfully inserted {:,} new rows".format(ct))
+                print(f"Successfully inserted {ct:,} new rows")
             else:
-                print("Successfully written {:,} rows".format(ct))
+                print(f"Successfully written {ct:,} rows")
             if skipped > 0:
-                print("Skipped {:,} lines and saved output to 'errors.txt'".format(skipped))
+                print(f"Skipped {skipped:,} lines and saved output to 'errors.txt'")
         if not insert:
-            cur.execute("CREATE INDEX {0}_index ON {0}(index);".format(table_name))
-            cur.execute("CREATE INDEX {0}_thread ON {0}(thread);".format(table_name))
+            cur.execute(f"CREATE INDEX {table_name}_index ON {table_name}(index);")
+            cur.execute(f"CREATE INDEX {table_name}_thread ON {table_name}(thread);")
             conn.commit()
 
 
@@ -213,12 +226,12 @@ def print_labels():
     with psycopg2.connect(CONN_STRING) as conn:
         cur = conn.cursor()
         try:
-            cur.execute("SELECT label FROM {} GROUP BY 1".format(table_name))
+            cur.execute(f"SELECT label FROM {table_name} GROUP BY 1")
             r = [row[0] for row in cur.fetchall()]
             conn.commit()
             if r == []:
                 print("The table is empty.")
             else:
-                print("Existing labels in the table:\n{}\nUse --reset --clear and a label to delete it, or --reset on its own to delete all.".format(r))
+                print(f"Existing labels in the table:\n{r}\nUse --reset --clear and a label to delete it, or --reset on its own to delete all.")
         except psycopg2.errors.UndefinedTable:
             print("The table doesn't exist.")
