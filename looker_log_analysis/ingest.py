@@ -1,14 +1,13 @@
 
 import psycopg2
 from datetime import datetime as dt
-import json
-from looker_log_analysis.log import log
-from looker_log_analysis.config import CONFIG
-from looker_log_analysis.parse import LineParser
+from log import log
+from config import CONFIG
+from parse import LineParser
 
 def connect():
     conn_string = ' '.join([f"{k}='{v}'" for k, v in CONFIG['Connection'].items()])
-    return connect()
+    return psycopg2.connect(conn_string)
 
 
 def test_connection():
