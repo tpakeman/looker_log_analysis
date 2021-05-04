@@ -30,6 +30,7 @@
   * `pg_ctl -D /usr/local/var/postgres start`
 * Create an actual database
   * `createdb mydatabasename`
+    * *NOTE - this should match the 'Connection' configuration in your config file*
 * Check postgres is running correctly by opening the SQL client inside terminal
   * `psql mydatabasename`
 * [Follow the Looker setup steps here](https://docs.looker.com/setup-and-management/database-config/postgresql)

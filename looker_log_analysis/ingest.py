@@ -1,5 +1,6 @@
 
 import psycopg2
+from datetime import datetime as dt
 import json
 from looker_log_analysis.log import log
 from looker_log_analysis.config import CONFIG
@@ -70,15 +71,21 @@ def teardown(label=False):
             conn.commit()
 
 
-def parse(cur, conn, line, ix, ct, table_name, label, total):
+def parse(cur, conn, line, ix, ct, table_name, label, total, starttime, lasttime):
     """Parse a log line into a postgres update statement"""
     data = LineParser(line, ix, label, table_name)
     cur.execute(data.sql)
-    if ct % 10000 == 0:
-        log('info', f"Successfully written {ct:,}{total} rows")
-    if ct % 100000 == 0:
+    if ct % int(CONFIG['App']['check_interval']) == 0:
+        newtime = dt.now()
+        elapsed = (newtime - starttime).total_seconds()
+        avg_call_time = elapsed / ct
+        est_completed_time = avg_call_time * total
+        remaining = est_completed_time - elapsed
+        log('info', f"Successfully written {ct:,} / ~{total:,} rows (est. {remaining:,.0f} seconds remaining)")
+    if ct % int(CONFIG['App']['commit_interval']) == 0:
         conn.commit()
         log('debug', "Committing")
+    return dt.now()
 
 
 def should_skip(line_text):
@@ -109,19 +116,19 @@ def parse_files(files, label, insert=True):
     """
     if not isinstance(files, list):
         files = [files]
+    starttime = dt.now()
+    last = dt.now()
     skipped = 0
     table_name = CONFIG['DB']['table_name']
     with connect() as conn:
         cur = conn.cursor()
         ix = 0 # For indexing the rows
         ct = 0 # For counting the rows inserted
-        total = ''
         est = 0 # For estimating the progress
         for file in files:
             with open(file, 'r', encoding='UTF-8') as f:
                 for line in f:
                     est += 1
-        total = f" / ~{est:,}"
         log('info', f"Approx. {est:,} log lines will be parsed")
         if not insert:
             teardown()
@@ -141,14 +148,16 @@ def parse_files(files, label, insert=True):
                             try:
                                 ix += 1
                                 ct += 1
-                                parse(cur=cur,
+                                last = parse(cur=cur,
                                       conn=conn,
                                       line=parse_line,
                                       ix=ix,
                                       ct=ct,
                                       table_name=table_name,
                                       label=label,
-                                      total=total)
+                                      total=est,
+                                      starttime=starttime,
+                                      lasttime=last)
                             except ValueError:
                                 skipped += 1
                                 log('error', 'Error parsing line')
@@ -161,14 +170,16 @@ def parse_files(files, label, insert=True):
         try:
             ix += 1
             ct += 1
-            parse(cur=cur,
+            last = parse(cur=cur,
                   conn=conn,
                   line=parse_line,
                   ix=ix,
                   ct=ct,
                   table_name=table_name,
                   label=label,
-                  total=total)
+                  total=est,
+                  starttime=starttime,
+                  lasttime=last)
         except Exception:
             skipped += 1
             log('error', 'Unhandled error')
@@ -190,7 +201,7 @@ def print_labels():
     with connect() as conn:
         cur = conn.cursor()
         try:
-            cur.execute("SELECT label FROM {} GROUP BY 1".format(table_name))
+            cur.execute(f"SELECT label FROM {table_name} GROUP BY 1")
             r = [row[0] for row in cur.fetchall()]
             conn.commit()
             if r == []:
