@@ -129,8 +129,8 @@ def parse_files(files, label, insert=True, config=CONFIG):
         setup(config=config)
         cur.execute(f"SELECT MAX(index) FROM {table_name}")
         max_index = cur.fetchone()[0]
-        max_index = 1 if max_index is None else max_index
-        ix = max_index
+        max_index = 0 if max_index is None else max_index
+        ix = max_index + 1
         parse_line = ''
         for file in files:
             with open(file, 'r', encoding='UTF-8') as f:

@@ -42,7 +42,10 @@ class LineParser(object):
                 self._produce_sql()
             except ValueError as e:
                 self.success = False
-                LOG.debug(f'Error parsing line: {self.file_name}:{self.ix}\t{self.data.strip()}:\n{str(e)}')
+                ## Making logfiles too big
+                # LOG.debug(f'Error parsing line: {self.file_name}:{self.ix}\t{self.data.strip()}:\n{str(e)}')
+                # print(e, self.data)
+                # raise(e)
 
     def _produce_sql(self):
         if self.has_query_summary:
