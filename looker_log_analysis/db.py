@@ -34,9 +34,7 @@ def setup(force=False, rebuild=True, config=CONFIG):
     with connect(config=config) as conn:
         cur = conn.cursor()
         if force:
-            cur.execute(f"DROP TABLE IF EXISTS {table_name};")
-            cur.execute(f"DROP INDEX IF EXISTS {table_name}_index;")
-            cur.execute(f"DROP INDEX IF EXISTS {table_name}_thread;")
+            drop_table(table_name, cur)
             if rebuild:
                 cur.execute("""CREATE TABLE {}({} integer PRIMARY KEY,
                                                {} timestamp,
@@ -93,6 +91,15 @@ def index_table(table_name, cursor):
     """Use a cursor to add default indexes to a table specified by name"""
     cursor.execute(f"CREATE INDEX {table_name}_index ON {table_name}(index);")
     cursor.execute(f"CREATE INDEX {table_name}_thread ON {table_name}(thread);")
+    LOG.info(f"Indexed table {table_name}")
+
+
+def drop_table(table_name, cursor):
+    """Use a cursor to drop a table and associated indexes by name"""
+    cursor.execute(f"DROP TABLE IF EXISTS {table_name};")
+    cursor.execute(f"DROP INDEX IF EXISTS {table_name}_index;")
+    cursor.execute(f"DROP INDEX IF EXISTS {table_name}_thread;")
+    LOG.info(f"Dropped table {table_name}")
 
 
 def parse_files(files, label, insert=True, config=CONFIG):
@@ -140,7 +147,7 @@ def parse_files(files, label, insert=True, config=CONFIG):
                         continue
                     else:
                         if re.match(LINESTART, line):
-                            # Valid line. Process existing buffer (class will handle empty strings)
+                            # Valid line. Process existing buffer
                             if buffer != '':
                                 success = parse(cur=cur,
                                                 conn=conn,
@@ -157,9 +164,7 @@ def parse_files(files, label, insert=True, config=CONFIG):
                                     ix += 1
                                     ct += 1
                                 else:
-                                    # First line is allowed to be empty
-                                    if buffer != '': 
-                                        skipped += 1
+                                    skipped += 1
                                     continue
                                 # make a new buffer
                             else:
