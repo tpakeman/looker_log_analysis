@@ -1,4 +1,5 @@
 from json import dumps
+import re
 from log import LOG
 
 class LineParser(object):
@@ -43,7 +44,7 @@ class LineParser(object):
             except ValueError as e:
                 self.success = False
                 ## Making logfiles too big
-                # LOG.debug(f'Error parsing line: {self.file_name}:{self.ix}\t{self.data.strip()}:\n{str(e)}')
+                LOG.debug(f'Error parsing line: {self.file_name}:{self.ix}\t{self.data.strip()}:\n{str(e)}')
                 # print(e, self.data)
                 # raise(e)
 

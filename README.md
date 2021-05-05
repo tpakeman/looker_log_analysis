@@ -115,10 +115,12 @@
 ---
 ### TO DO
 * Unit tests!
-* Parsing problem
-  * A successful line is processed immediately - we should hold it in memory until we know the next line is also successful
-    * i.e. if 1 is good, we wait until 2 is good before committing 1
-    * Otherwise it's possible 2 is a continuation of 1 that we are ignoring
+  * Use mocks for connection objects
+* Parsing problems
+  * We are skipping almost every line
+* Performance
+  * `re` is more accurate but much slower than simple str matching
+
 * Improve parsing coverage
 * CLI
   * Add log output to stdout, but prevent if --silent passed

@@ -5,6 +5,8 @@ from log import LOG
 from parse import LineParser
 from config import config
 from helpers import calc_remaining, should_skip, setup_years
+import re
+LINESTART = re.compile(r'^\d{4}\-\d{2}\-\d{2}\s\d{2}\:\d{2}\:\d{2}\.\d{3} \+\d{4} \[')
 CONFIG = config()
 
 def connect(config=CONFIG):
@@ -29,7 +31,7 @@ def setup(force=False, rebuild=True, config=CONFIG):
     test_connection()
     table_name = config['DB']['table_name']
     COLS = ['index', 'timestamp', 'label', 'loglevel', 'thread', 'source', 'query', 'query_summary']
-    with connect() as conn:
+    with connect(config=config) as conn:
         cur = conn.cursor()
         if force:
             cur.execute(f"DROP TABLE IF EXISTS {table_name};")
@@ -64,7 +66,7 @@ def teardown(label=False, config=CONFIG):
     if not label:
         setup(force=True, rebuild=False, config=config)
     else:
-        with connect() as conn:
+        with connect(config=config) as conn:
             cur = conn.cursor()
             cur.execute(f"SELECT COUNT(*) FROM {table_name} WHERE label = '{label}'")
             r = cur.fetchone()[0]
@@ -114,8 +116,7 @@ def parse_files(files, label, insert=True, config=CONFIG):
     starttime = dt.now()
     skipped = 0
     table_name = config['DB']['table_name']
-    valid_years = setup_years(dt.now().year, CONFIG['App']['valid_years_back'])
-    with connect() as conn:
+    with connect(config=config) as conn:
         cur = conn.cursor()
         ct = 1 # For counting the rows inserted
         est = 0 # For estimating the progress
@@ -131,37 +132,46 @@ def parse_files(files, label, insert=True, config=CONFIG):
         max_index = cur.fetchone()[0]
         max_index = 0 if max_index is None else max_index
         ix = max_index + 1
-        parse_line = ''
+        buffer = ''
         for file in files:
             with open(file, 'r', encoding='UTF-8') as f:
-                for rawline in f:
-                    if should_skip(rawline):
-                        continue
-                    elif not rawline.strip().startswith(valid_years):
-                        parse_line += rawline
+                for line in f:
+                    if should_skip(line):
                         continue
                     else:
-                        success = parse(cur=cur,
-                                        conn=conn,
-                                        line=parse_line,
-                                        ix=ix,
-                                        ct=ct,
-                                        table_name=table_name,
-                                        label=label,
-                                        file=file,
-                                        total=est,
-                                        starttime=starttime,
-                                        config=config)
-                        if success:
-                            ix += 1
-                            ct += 1
+                        if re.match(LINESTART, line):
+                            # Valid line. Process existing buffer (class will handle empty strings)
+                            if buffer != '':
+                                success = parse(cur=cur,
+                                                conn=conn,
+                                                line=buffer,
+                                                ix=ix,
+                                                ct=ct,
+                                                table_name=table_name,
+                                                label=label,
+                                                file=file,
+                                                total=est,
+                                                starttime=starttime,
+                                                config=config)
+                                if success:
+                                    ix += 1
+                                    ct += 1
+                                else:
+                                    # First line is allowed to be empty
+                                    if buffer != '': 
+                                        skipped += 1
+                                    continue
+                                # make a new buffer
+                            else:
+                                buffer = line
                         else:
-                            skipped += 1
+                            # Invalid line - add to buffer and continue
+                            buffer += line
                             continue
-                        parse_line = rawline
+        # After loop finishes parse the final buffer
         success = parse(cur=cur,
                         conn=conn,
-                        line=parse_line,
+                        line=buffer,
                         ix=ix,
                         ct=ct,
                         table_name=table_name,
@@ -188,7 +198,7 @@ def parse_files(files, label, insert=True, config=CONFIG):
 def print_labels(config=CONFIG):
     table_name = config['DB']['table_name']
     outstring = ''
-    with connect() as conn:
+    with connect(config=config) as conn:
         cur = conn.cursor()
         try:
             cur.execute(f"SELECT label, COUNT(*) FROM {table_name} GROUP BY 1 ORDER BY 2 DESC")

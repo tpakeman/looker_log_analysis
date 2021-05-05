@@ -11,7 +11,7 @@ if not os.path.exists(LOGDIR):
 file_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 stdout_format = logging.Formatter('%(levelname)s: %(message)s')
 
-logging.basicConfig(filename=os.path.join('log', f'looker-log-parsing-{dt.now():%Y-%m-%d}.log'),
+logging.basicConfig(filename=os.path.join(LOGDIR, f'looker-log-parsing-{dt.now():%Y-%m-%d}.log'),
                     format=file_format,
                     level=logging.DEBUG)
 
