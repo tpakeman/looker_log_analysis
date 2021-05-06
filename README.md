@@ -116,12 +116,9 @@
 ### TO DO
 * Unit tests!
   * Use mocks for connection objects
-* Parsing problems
-  * We are skipping almost every line
-* Performance
-  * `re` is more accurate but much slower than simple str matching
-
-* Improve parsing coverage
+* Improve parsing coverage to reduce skipped lines
+* bug
+  * count not matching inserted rows 
 * CLI
   * Add log output to stdout, but prevent if --silent passed
   * Print to command line when tearing down

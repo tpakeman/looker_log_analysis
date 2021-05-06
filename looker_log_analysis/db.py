@@ -2,11 +2,10 @@
 import psycopg2
 from datetime import datetime as dt
 from log import LOG
-from parse import LineParser
 from config import config
-from helpers import calc_remaining, should_skip, setup_years
-import re
-LINESTART = re.compile(r'^\d{4}\-\d{2}\-\d{2}\s\d{2}\:\d{2}\:\d{2}\.\d{3} \+\d{4} \[')
+from helpers import estimate_size
+from parse import LineHandler
+
 CONFIG = config()
 
 def connect(config=CONFIG):
@@ -45,7 +44,6 @@ def setup(force=False, rebuild=True, config=CONFIG):
                                                {} text,
                                                {} text);""".format(table_name, *COLS))
                 LOG.info(f"Successfully created new table {table_name}")
-            conn.commit()
         else:
             try:
                 cur.execute(f"SELECT COUNT(*) FROM {table_name}")
@@ -54,7 +52,6 @@ def setup(force=False, rebuild=True, config=CONFIG):
             except(psycopg2.ProgrammingError) as e:
                 LOG.warn(str(e))
                 setup(force=True, config=config)
-            conn.commit()
 
 
 def teardown(label=False, config=CONFIG):
@@ -70,21 +67,6 @@ def teardown(label=False, config=CONFIG):
             r = cur.fetchone()[0]
             cur.execute(f"DELETE FROM {table_name} WHERE label = '{label}'")
             LOG.info(f"Successfully deleted {r:,} rows with label {label} from {table_name}")
-            conn.commit()
-
-
-def parse(cur, conn, line, ix, ct, table_name, label, file, total, starttime, config=CONFIG):
-    """Parse a log line into a postgres update statement"""
-    data = LineParser(line, ix, label, table_name, file)
-    if data.success:
-        cur.execute(data.sql)
-        if ct % int(config['App']['check_interval']) == 0:
-            remaining = calc_remaining(starttime, dt.now(), ct, total)
-            LOG.info(f"Successfully written {ct:,} / ~{total:,} rows (est. {remaining:,.0f} seconds remaining)")
-        if ct % int(config['App']['commit_interval']) == 0:
-            conn.commit()
-            LOG.debug("Committing")
-    return data.success
 
 
 def index_table(table_name, cursor):
@@ -120,18 +102,10 @@ def parse_files(files, label, insert=True, config=CONFIG):
     """
     if not isinstance(files, list):
         files = [files]
-    starttime = dt.now()
-    skipped = 0
     table_name = config['DB']['table_name']
     with connect(config=config) as conn:
         cur = conn.cursor()
-        ct = 1 # For counting the rows inserted
-        est = 0 # For estimating the progress
-        for file in files:
-            with open(file, 'r', encoding='UTF-8') as f:
-                for _ in f:
-                    est += 1
-        LOG.info(f"Approx. {est:,} log lines will be parsed")
+        est = estimate_size(files, LOG)
         if not insert:
             teardown(config=config)
         setup(config=config)
@@ -139,65 +113,32 @@ def parse_files(files, label, insert=True, config=CONFIG):
         max_index = cur.fetchone()[0]
         max_index = 0 if max_index is None else max_index
         ix = max_index + 1
-        buffer = ''
+        max_statements = CONFIG['App']['statements_per_update']
+        check_interval=CONFIG['App']['check_interval']
+        commit_interval=CONFIG['App']['commit_interval']
+        Handler = LineHandler(cur,
+                              conn,
+                              ix,
+                              est,
+                              label,
+                              table_name,
+                              LOG,
+                              dt.now(),
+                              check_interval,
+                              commit_interval,
+                              max_statements)
         for file in files:
             with open(file, 'r', encoding='UTF-8') as f:
                 for line in f:
-                    if should_skip(line):
-                        continue
-                    else:
-                        if re.match(LINESTART, line):
-                            # Valid line. Process existing buffer
-                            if buffer != '':
-                                success = parse(cur=cur,
-                                                conn=conn,
-                                                line=buffer,
-                                                ix=ix,
-                                                ct=ct,
-                                                table_name=table_name,
-                                                label=label,
-                                                file=file,
-                                                total=est,
-                                                starttime=starttime,
-                                                config=config)
-                                if success:
-                                    ix += 1
-                                    ct += 1
-                                else:
-                                    skipped += 1
-                                    continue
-                                # make a new buffer
-                            else:
-                                buffer = line
-                        else:
-                            # Invalid line - add to buffer and continue
-                            buffer += line
-                            continue
-        # After loop finishes parse the final buffer
-        success = parse(cur=cur,
-                        conn=conn,
-                        line=buffer,
-                        ix=ix,
-                        ct=ct,
-                        table_name=table_name,
-                        label=label,
-                        file=file,
-                        total=est,
-                        starttime=starttime,
-                        config=config)
-        if success:
-            ix += 1
-            ct += 1
-        else:
-            skipped += 1
-        if skipped > 0:
-            LOG.warn(f"Skipped {skipped:,} lines and saved output to log")
+                    Handler.process(line, f)
+        Handler.clean_up()
+        if Handler.skipped > 0:
+            LOG.warn(f"Skipped {Handler.skipped:,} lines and saved output to log")
         if insert:
-            LOG.info(f"Successfully inserted {ct:,} new rows")
+            LOG.info(f"Successfully inserted {Handler.ct:,} new rows")
         else:
-            LOG.info(f"Successfully written {ct:,} rows")
+            LOG.info(f"Successfully written {Handler.ct:,} rows")
             index_table(table_name, cur)
-        conn.commit()
 
 
 def print_labels(config=CONFIG):
@@ -209,7 +150,6 @@ def print_labels(config=CONFIG):
             cur.execute(f"SELECT label, COUNT(*) FROM {table_name} GROUP BY 1 ORDER BY 2 DESC")
             for row in cur.fetchall():
                 outstring += f"\t{row[0]:>15}:\t{row[1]:<6,} rows\n"
-            conn.commit()
             if outstring != '':
                 LOG.info(f"Existing labels in the table:\n{outstring}\nUse --reset --clear (or -rc) and a label to delete it, or --reset on its own to delete all.")
             else:

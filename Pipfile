@@ -8,3 +8,4 @@ autopep8 = "*"
 
 [packages]
 psycopg2 = ">=2.8"
+pympler = "*"
