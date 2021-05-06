@@ -53,6 +53,7 @@ class LineHandler(object):
             remaining = (est_completed_time - elapsed)
             self.log.info(f"Successfully written {self.ct:,} / ~{self.line_estimate:,} rows (est. {remaining:,.0f} seconds remaining)")
         if self.ct % self.commit_interval == 0:
+            self._execute()
             self.connection.commit()
             self.log.debug("Committing")
 

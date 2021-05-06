@@ -1,10 +1,10 @@
+# TO DO - Mock and intercept DB calls to interrogate processing
+# from unittest.mock import Mock, MagicMock, patch
 from json.decoder import JSONDecodeError
 import unittest, json
-# from unittest.mock import Mock, MagicMock, patch
 from looker_log_analysis.tests import setup_tests # Redirect logging
 from looker_log_analysis.parse import LineParser
-from looker_log_analysis import db
-DEFAULTS = (1, 'some_label', 'some_table', 'some_file')
+DEFAULTS = (1, 'some_label', 'some_table', 'some_file', setup_tests.log.LOG)
 
 
 class TestParsing(unittest.TestCase):  
@@ -27,7 +27,7 @@ class TestParsing(unittest.TestCase):
         self.assertEqual(data.process_id,'13757da')
         self.assertEqual(data.source,'periodic')
         self.assertEqual(data.query_summary,'NULL')
-        self.assertEqual(data.sql,f"""INSERT INTO {data.table_name} ("index", "timestamp", "label", "loglevel", "thread", "source", "query", "query_summary") VALUES ('{data.ix}', '{data.ts}', '{data.label}', '{data.log_level}', '{data.process_id}', '{data.source}', '{data.query}', '{data.query_summary}')""")
+        self.assertEqual(data.sql,f"""('{data.ix}', '{data.ts}', '{data.label}', '{data.log_level}', '{data.process_id}', '{data.source}', '{data.query}', '{data.query_summary}')""")
 
     def test_data_with_query_summary(self):
         """Should successfully parse a log line containing a query summary"""
@@ -46,7 +46,7 @@ class TestParsing(unittest.TestCase):
             json.loads(data.query_summary)
         except JSONDecodeError:
             self.fail("Query summary should be parsable JSON")
-        self.assertEqual(data.sql,f"""INSERT INTO {data.table_name} ("index", "timestamp", "label", "loglevel", "thread", "source", "query", "query_summary") VALUES ('{data.ix}', '{data.ts}', '{data.label}', '{data.log_level}', '{data.process_id}', '{data.source}', '{data.query}', '{data.query_summary}')""")
+        self.assertEqual(data.sql,f"""('{data.ix}', '{data.ts}', '{data.label}', '{data.log_level}', '{data.process_id}', '{data.source}', '{data.query}', '{data.query_summary}')""")
     
     def test_multiline_data(self):
         """Should successfully parse a log line spanning several lines"""
@@ -67,7 +67,7 @@ oZH1A+o5W6KzQXhy5v+NhQ07HMS25AOj5PU0RTSXaRu3I20z8IC1YB8=")''')
         self.assertEqual(data.process_id,'3289838')
         self.assertEqual(data.source,'db:looker')
         self.assertEqual(data.query_summary,'NULL')
-        self.assertEqual(data.sql,f"""INSERT INTO {data.table_name} ("index", "timestamp", "label", "loglevel", "thread", "source", "query", "query_summary") VALUES ('{data.ix}', '{data.ts}', '{data.label}', '{data.log_level}', '{data.process_id}', '{data.source}', '{data.query}', '{data.query_summary}')""")
+        self.assertEqual(data.sql,f"""('{data.ix}', '{data.ts}', '{data.label}', '{data.log_level}', '{data.process_id}', '{data.source}', '{data.query}', '{data.query_summary}')""")
         ...
     def test_malformed_line(self):
         case = """Periodic job 'connection_hub_status_update' completed"""
@@ -83,11 +83,6 @@ oZH1A+o5W6KzQXhy5v+NhQ07HMS25AOj5PU0RTSXaRu3I20z8IC1YB8=")''')
         self.assertEqual(data.query_summary,None)
         self.assertEqual(data.sql,None)
 
-    # TO DO - Mock and intercept DB calls to interrogate processing
-    def test_read_multiline(self):
-        # single line, triple line, single line
-        db.parse_files('looker_log_analysis/tests/data/multiline', 'foo')
-        # print(mock_connection)
 
 if __name__ == '__main__':
     unittest.main()

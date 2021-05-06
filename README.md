@@ -119,6 +119,7 @@
 * Improve parsing coverage to reduce skipped lines
 * bug
   * count not matching inserted rows 
+  * Changing the commit frequency seems to change number of rows inserted
 * CLI
   * Add log output to stdout, but prevent if --silent passed
   * Print to command line when tearing down
