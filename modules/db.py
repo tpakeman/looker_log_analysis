@@ -1,12 +1,12 @@
 
 import psycopg2
 from datetime import datetime as dt
-from log import LOG
-from config import config
-from helpers import estimate_size
-from parse import LineHandler
+from modules.log import LOG
+from modules import config
+from modules.helpers import estimate_size
+from modules.parse import LineHandler
 
-CONFIG = config()
+CONFIG = config.config()
 
 def connect(config=CONFIG):
     conn_string = ' '.join([f"{k}='{v}'" for k, v in config['Connection'].items()])
@@ -49,8 +49,7 @@ def setup(force=False, rebuild=True, config=CONFIG):
                 cur.execute(f"SELECT COUNT(*) FROM {table_name}")
                 r = cur.fetchone()[0]
                 LOG.info(f"Existing table {table_name} contains {r:,} rows")
-            except(psycopg2.ProgrammingError) as e:
-                LOG.warn(str(e))
+            except(psycopg2.ProgrammingError):
                 setup(force=True, config=config)
 
 
@@ -113,7 +112,7 @@ def parse_files(files, label, insert=True, config=CONFIG):
         max_index = cur.fetchone()[0]
         max_index = 0 if max_index is None else max_index
         ix = max_index + 1
-        max_statements = CONFIG['App']['statements_per_update']
+        max_statements = CONFIG['App']['statements_per_insert']
         check_interval=CONFIG['App']['check_interval']
         commit_interval=CONFIG['App']['commit_interval']
         Handler = LineHandler(cur,
@@ -131,7 +130,8 @@ def parse_files(files, label, insert=True, config=CONFIG):
             with open(file, 'r', encoding='UTF-8') as f:
                 for line in f:
                     Handler.process(line, f)
-        Handler.clean_up()
+            last_file = file
+        Handler.clean_up(last_file)
         if Handler.skipped > 0:
             LOG.warn(f"Skipped {Handler.skipped:,} lines and saved output to log")
         if insert:

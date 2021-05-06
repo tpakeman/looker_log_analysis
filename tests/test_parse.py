@@ -2,8 +2,8 @@
 # from unittest.mock import Mock, MagicMock, patch
 from json.decoder import JSONDecodeError
 import unittest, json
-from looker_log_analysis.tests import setup_tests # Redirect logging
-from looker_log_analysis.parse import LineParser
+from tests import setup_tests # Redirect logging
+from modules.parse import LineParser
 DEFAULTS = (1, 'some_label', 'some_table', 'some_file', setup_tests.log.LOG)
 
 

@@ -1,6 +1,6 @@
 # !/usr/bin/env python3
-import db
-from log import LOG
+from modules import db
+from modules.log import LOG
 import argparse
 
 def main():

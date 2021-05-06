@@ -24,6 +24,7 @@ class LineHandler(object):
             raise ValueError('Max statements must be more than 1')
         self.ct = 1
         self.skipped = 0
+        self.staged_executes = 0
         self.start_time = start_time
         self.index = index
         self.line_estimate = line_estimate
@@ -31,8 +32,8 @@ class LineHandler(object):
         self.table_name = table_name
         self.buffer = ''
         self.statements = []
-        self.max_statements =  int(max_statements)
         self.cursor = cursor
+        self.max_statements =  int(max_statements)
         self.connection = connection
         self.check_interval = int(check_interval)
         self.commit_interval = int(commit_interval)
@@ -52,10 +53,10 @@ class LineHandler(object):
             est_completed_time = avg_call_time * self.line_estimate
             remaining = (est_completed_time - elapsed)
             self.log.info(f"Successfully written {self.ct:,} / ~{self.line_estimate:,} rows (est. {remaining:,.0f} seconds remaining)")
-        if self.ct % self.commit_interval == 0:
-            self._execute()
+        if self.staged_executes == self.commit_interval:
             self.connection.commit()
             self.log.debug("Committing")
+            self.staged_executes = 0
 
     def process(self, line, filename):
         if self._should_skip(line):
@@ -87,9 +88,10 @@ class LineHandler(object):
         data = ',\n'.join(self.statements)
         self.sql = prefix + data
         self.cursor.execute(self.sql)
+        self.staged_executes += 1
         self.statements = []
 
-    def clean_up(self):
+    def clean_up(self, filename):
         ## Process any remaining lines in buffer
         if self.continuation:
             data = LineParser(self.buffer, self.index, self.insert_label, self.table_name, filename)

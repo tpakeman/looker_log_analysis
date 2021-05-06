@@ -1,9 +1,9 @@
 import unittest
-from looker_log_analysis import db
-from looker_log_analysis.config import config
+from modules import db
+from modules.config import config
 from psycopg2 import OperationalError 
 DEFAULT_CONFIG = config()
-from looker_log_analysis.tests import setup_tests
+from tests import setup_tests
 
 class TestDB(unittest.TestCase):
     def test_connection_successful(self):

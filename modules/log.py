@@ -1,8 +1,8 @@
 import logging
 import os, sys
 from datetime import datetime as dt
-from config import config
-CONFIG = config()
+from modules import config
+CONFIG = config.config()
 LOG = logging.getLogger(CONFIG['App']['log_name'])
 LOGDIR = CONFIG['App']['log_directory']
 if not os.path.exists(LOGDIR):
